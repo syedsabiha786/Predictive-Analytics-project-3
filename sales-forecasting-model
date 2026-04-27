@@ -1,0 +1,37 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+import plotly.express as px
+
+st.set_page_config(page_title="Predictive Analytics", layout="wide")
+
+df = pd.read_csv("data.csv")
+df["Date"] = pd.to_datetime(df["Date"])
+df["Days"] = (df["Date"] - df["Date"].min()).dt.days
+
+X = df[["Days"]]
+y = df["Sales"]
+
+model = LinearRegression()
+model.fit(X, y)
+
+future_days = np.arange(0, 15).reshape(-1, 1)
+predictions = model.predict(future_days)
+
+future_dates = pd.date_range(start=df["Date"].min(), periods=15)
+
+pred_df = pd.DataFrame({"Date": future_dates, "Predicted Sales": predictions})
+
+st.title("Predictive Analytics Dashboard")
+
+fig = px.line(df, x="Date", y="Sales", title="Actual Sales")
+st.plotly_chart(fig, use_container_width=True)
+
+fig2 = px.line(pred_df, x="Date", y="Predicted Sales", title="Forecasted Sales")
+st.plotly_chart(fig2, use_container_width=True)
+
+combined = pd.merge(df, pred_df, on="Date", how="outer")
+
+fig3 = px.line(combined, x="Date", y=["Sales", "Predicted Sales"], title="Actual vs Predicted")
+st.plotly_chart(fig3, use_container_width=True)
